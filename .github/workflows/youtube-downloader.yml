@@ -1,0 +1,31 @@
+name: YouTube Live Downloader
+on:
+  schedule:
+    - cron: '0 20 * * 5' # Friday 8 PM UTC (9 PM WAT)
+    - cron: '0 20 * * 6' # Saturday 8 PM UTC (9 PM WAT)
+    - cron: '0 20 * * 0' # Sunday 8 PM UTC (9 PM WAT)
+jobs:
+  download-upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        run: |
+          pip install yt-dlp google-auth-oauthlib google-auth-httplib2 google-api-python-client requests
+      - name: Copy credentials and token
+        run: |
+          echo "${{ secrets.CREDENTIALS_JSON }}" > credentials.json
+          echo "${{ secrets.TOKEN_JSON }}" > token.json
+      - name: Check for live stream and download
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+        run: |
+          python check_live_stream.py
+      - name: Upload to Google Drive
+        run: |
+          python upload_to_drive.py "Trade_Winds_2_$(date +%Y%m%d_%H%M%S).mp4"

@@ -2,6 +2,7 @@ name: YouTube Live Downloader
 on:
   schedule:
     - cron: '*/10 20-21 * * 5,6,0' # Every 10 minutes, 8:00–10:00 PM UTC (9:00–11:00 PM WAT), Fri–Sun
+  workflow_dispatch:
 jobs:
   download-upload:
     runs-on: ubuntu-latest

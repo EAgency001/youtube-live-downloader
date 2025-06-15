@@ -27,6 +27,11 @@ jobs:
         run: |
           python check_live_stream.py
           echo "FILENAME=$(ls Trade_Winds_2_*.mp4 2>/dev/null || echo Trade_Winds_2_$(date +%Y%m%d_%H%M%S).mp4)" >> $GITHUB_ENV
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: downloaded-video
+          path: ${{ env.FILENAME }}
       - name: Upload to Google Drive
         run: |
           if [ -f "${{ env.FILENAME }}" ]; then

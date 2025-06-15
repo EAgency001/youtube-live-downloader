@@ -1,7 +1,7 @@
 name: YouTube Live Downloader
 on:
   schedule:
-    - cron: '*/10 20-21 * * 5,6,0' # Every 10 minutes, 8:00–10:00 PM UTC (9:00–11:00 PM WAT), Fri–Sun
+    - cron: '*/10 20-22 * * 5,6,0'
   workflow_dispatch:
 jobs:
   download-upload:
@@ -21,10 +21,17 @@ jobs:
           echo "${{ secrets.CREDENTIALS_JSON }}" > credentials.json
           echo "${{ secrets.TOKEN_JSON }}" > token.json
       - name: Check for live stream and download
+        id: download
         env:
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
         run: |
           python check_live_stream.py
+          echo "FILENAME=$(ls Trade_Winds_2_*.mp4 2>/dev/null || echo Trade_Winds_2_$(date +%Y%m%d_%H%M%S).mp4)" >> $GITHUB_ENV
       - name: Upload to Google Drive
         run: |
-          python upload_to_drive.py "Trade_Winds_2_$(date +%Y%m%d_%H%M%S).mp4"
+          if [ -f "${{ env.FILENAME }}" ]; then
+            python upload_to_drive.py "${{ env.FILENAME }}"
+          else
+            echo "File ${{ env.FILENAME }} not found, exiting."
+            exit 1
+          fi

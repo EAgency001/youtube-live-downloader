@@ -21,12 +21,23 @@ print(f"Found live stream: {video_url}")
 # Use video ID as filename base
 OUTPUT_FILE = f"Trade_Winds_{video_id}.mp4"
 
+# Validate cookies file
+cookies_path = "/tmp/cookies.txt"
+if not os.path.exists(cookies_path) or os.path.getsize(cookies_path) == 0:
+    print(f"Error: {cookies_path} is missing or empty.")
+    exit(1)
+with open(cookies_path, "r") as f:
+    first_line = f.readline().strip()
+    if not first_line.startswith("# Netscape HTTP Cookie File"):
+        print(f"Error: {cookies_path} is not in Netscape format.")
+        exit(1)
+
 # Download with yt-dlp
 cmd = [
     "yt-dlp",
     "-f", "bestvideo[height=360]+bestaudio",
     "--live-from-start",
-    "--cookies", "/tmp/cookies.txt",
+    "--cookies", cookies_path,
     video_url,
     "-o", OUTPUT_FILE
 ]
@@ -34,6 +45,7 @@ try:
     subprocess.run(cmd, check=True)
     print(f"Downloaded to {OUTPUT_FILE}")
 except subprocess.CalledProcessError as e:
-    print(f"Download failed: {e}, but continuing for artifact.")
+    print(f"Download failed: {e}")
+    raise  # Re-raise to fail the step if critical
 with open(os.environ['GITHUB_ENV'], 'a') as f:
     f.write(f"FILENAME={OUTPUT_FILE}\n")

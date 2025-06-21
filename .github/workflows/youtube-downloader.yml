@@ -16,27 +16,34 @@ jobs:
       - name: Install dependencies
         run: |
           pip install yt-dlp google-auth-oauthlib google-auth-httplib2 google-api-python-client requests
-      - name: Copy credentials and token
+      - name: Copy credentials and cookies
         run: |
           echo "${{ secrets.CREDENTIALS_JSON }}" > credentials.json
           echo "${{ secrets.TOKEN_JSON }}" > token.json
+          echo "${{ secrets.COOKIES_TXT }}" > /tmp/cookies.txt
       - name: Check for live stream and download
         id: download
         env:
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
         run: |
-          python check_live_stream.py
+          python check_live_stream.py || echo "Download failed, checking output"
           echo "FILENAME=$(ls Trade_Winds_2_*.mp4 2>/dev/null || echo Trade_Winds_2_$(date +%Y%m%d_%H%M%S).mp4)" >> $GITHUB_ENV
+          if [ ! -f "${{ env.FILENAME }}" ]; then
+            echo "No video file found, skipping upload."
+            exit 0
+          fi
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: downloaded-video
           path: ${{ env.FILENAME }}
       - name: Upload to Google Drive
+        if: success() && env.FILENAME != '' && env.FILENAME != 'Trade_Winds_2_$(date +%Y%m%d_%H%M%S).mp4'
         run: |
           if [ -f "${{ env.FILENAME }}" ]; then
             python upload_to_drive.py "${{ env.FILENAME }}"
           else
-            echo "File ${{ env.FILENAME }} not found, exiting."
-            exit 1
+            echo "File ${{ env.FILENAME }} not found, relying on artifact."
+            exit 0
           fi

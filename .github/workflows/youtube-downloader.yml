@@ -27,7 +27,7 @@ jobs:
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
         run: |
           python check_live_stream.py || echo "Download failed, checking output"
-          echo "FILENAME=$(ls Trade_Winds_2_*.mp4 2>/dev/null || echo Trade_Winds_2_$(date +%Y%m%d_%H%M%S).mp4)" >> $GITHUB_ENV
+          # FILENAME is set by the script using the video ID
           if [ ! -f "${{ env.FILENAME }}" ]; then
             echo "No video file found, skipping upload."
             exit 0
@@ -39,7 +39,7 @@ jobs:
           name: downloaded-video
           path: ${{ env.FILENAME }}
       - name: Upload to Google Drive
-        if: success() && env.FILENAME != '' && env.FILENAME != 'Trade_Winds_2_$(date +%Y%m%d_%H%M%S).mp4'
+        if: success() && env.FILENAME != ''
         run: |
           if [ -f "${{ env.FILENAME }}" ]; then
             python upload_to_drive.py "${{ env.FILENAME }}"
